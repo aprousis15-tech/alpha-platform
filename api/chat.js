@@ -29,9 +29,10 @@ export default async function handler(req, res) {
   const data = await response.json();
   console.log("Gemini response:", JSON.stringify(data).slice(0, 500));
   
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-               data.error?.message || 
-               "No response from Gemini";
+let text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+           data.error?.message || 
+           "No response from Gemini";
+text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   res.status(200).json({ content: [{ type: "text", text }] });
 }
