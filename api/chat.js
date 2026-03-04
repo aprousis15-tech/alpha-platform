@@ -20,14 +20,18 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: systemText + userText }] }],
+        contents: [{ role: "user", parts: [{ text: systemText + userText }] }],
         generationConfig: { maxOutputTokens: max_tokens, temperature: 0.7 }
       })
     }
   );
 
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  console.log("Gemini response:", JSON.stringify(data).slice(0, 500));
+  
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+               data.error?.message || 
+               "No response from Gemini";
 
   res.status(200).json({ content: [{ type: "text", text }] });
 }
