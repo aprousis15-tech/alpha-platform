@@ -4,7 +4,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { system, messages, max_tokens } = req.body;
+  let body = req.body;
+  if (typeof body === 'string') body = JSON.parse(body);
+
+  const system = body?.system || "";
+  const messages = body?.messages || [];
+  const max_tokens = body?.max_tokens || 3000;
 
   const systemText = system ? system + "\n\n" : "";
   const userText = messages?.[0]?.content || "";
@@ -16,7 +21,7 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: systemText + userText }] }],
-        generationConfig: { maxOutputTokens: max_tokens || 3000, temperature: 0.7 }
+        generationConfig: { maxOutputTokens: max_tokens, temperature: 0.7 }
       })
     }
   );
