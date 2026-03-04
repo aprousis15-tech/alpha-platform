@@ -1,18 +1,1 @@
-# Alpha Platform
-
-Unified investment research platform with two tools:
-- **Alpha Terminal** — AI-powered stock analyzer with Scorecard, IC Write-Up, and Live Intelligence tabs
-- **Research Hub** — 9-vertical generalist investor reading stack with premium subscription guide
-
-## Deploy to Vercel (3 steps)
-
-1. Push this folder to a GitHub repository
-2. Go to vercel.com → Import Project → select the repo
-3. Click Deploy (zero config needed — Vercel auto-detects Vite)
-
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
+{}
