@@ -6,7 +6,7 @@
   <title>Alpha Platform</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{background:#0C0C14;color:#fff;}
@@ -788,7 +788,7 @@ function AlphaTerminal() {
 
     /* ── RESEARCH HUB ── */
 
-const CSS2 = `
+const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0C0C14;}
@@ -1497,11 +1497,44 @@ function PremiumView() {
   );
 }
 
+/* ── SUPABASE CONFIG ───────────────────────────────────────────── */
+const SUPABASE_URL = "https://bdfjddzwvudqictvuvtr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZmpkZHp3dnVkcWljdHZ1dnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzcyMDAsImV4cCI6MjA4ODMxMzIwMH0.Bmy1vN_Oi_7H-wOxmSUxCTh7yWUS4d3SSdqk4Iz2LeU";
+
 /* ── MAIN APP ──────────────────────────────────────────────────── */
 function ResearchHub() {
   const [view, setView]       = useState("verticals");
   const [activeV, setActiveV] = useState("all");
   const [freeOnly, setFreeOnly] = useState(false);
+  const [newsSector, setNewsSector] = useState("AI & Technology");
+  const [newsData, setNewsData]     = useState([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError]   = useState(null);
+
+  const SECTOR_NAMES = ["AI & Technology","Power & Energy","Real Assets & Infrastructure","Vertical Software","Consumer Brands & Retail","Financials & Capital Markets","Industrials & Automation","Defense & Sovereign Tech","Global Macro & Commodities"];
+
+  async function fetchNews(sector) {
+    setNewsLoading(true);
+    setNewsError(null);
+    setNewsData([]);
+    try {
+      const res = await fetch("/api/news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sector })
+      });
+      const data = await res.json();
+      if (data.articles && data.articles.length > 0) {
+        setNewsData(data.articles);
+      } else {
+        setNewsError("No news returned. Try again.");
+      }
+    } catch(e) {
+      setNewsError("News fetch failed: " + e.message);
+    } finally {
+      setNewsLoading(false);
+    }
+  }
 
   const totalSources = VERTICALS.reduce((a,v)=>a+v.sources.length,0);
   const freeSources  = VERTICALS.reduce((a,v)=>a+v.sources.filter(s=>s.free).length,0);
@@ -1528,7 +1561,7 @@ function ResearchHub() {
           </div>
         </div>
         <div style={{ display:"flex", gap:"4px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"8px", padding:"3px" }}>
-          {[["verticals","9 Verticals"],["premium","Premium Stack"],["cascade","AI Cascade"]].map(([id,label])=>(
+          {[["verticals","9 Verticals"],["premium","Premium Stack"],["cascade","AI Cascade"],["news","Live News"]].map(([id,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{ padding:"7px 16px", borderRadius:"6px", border:"none", cursor:"pointer", background:view===id?"rgba(255,255,255,0.1)":"transparent", color:view===id?"#fff":"rgba(255,255,255,0.38)", fontSize:"12px", fontFamily:"var(--mono)", fontWeight:600, transition:"all 0.15s" }}>{label}</button>
           ))}
         </div>
@@ -1573,6 +1606,50 @@ function ResearchHub() {
 
         {view==="premium" && <PremiumView />}
         {view==="cascade" && <CascadeView />}
+
+        {view==="news" && (
+          <div>
+            <div style={{ marginBottom:"26px" }}>
+              <h1 style={{ fontSize:"clamp(22px,3.5vw,36px)", fontWeight:700, lineHeight:1.15, marginBottom:"8px", letterSpacing:"-0.02em" }}>Live Market Intelligence</h1>
+              <p style={{ color:"rgba(255,255,255,0.38)", fontSize:"14px", lineHeight:1.65, maxWidth:"580px" }}>Real-time news and developments across your 9 verticals, grounded in live web search. Updated on demand.</p>
+            </div>
+
+            {/* Sector selector */}
+            <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"24px" }}>
+              {SECTOR_NAMES.map(s => (
+                <button key={s} onClick={() => setNewsSector(s)} style={{ padding:"5px 13px", borderRadius:"20px", border:`1px solid ${newsSector===s?"rgba(52,211,153,0.4)":"rgba(255,255,255,0.07)"}`, background:newsSector===s?"rgba(52,211,153,0.08)":"rgba(255,255,255,0.03)", color:newsSector===s?"#34D399":"rgba(255,255,255,0.38)", cursor:"pointer", fontFamily:"var(--mono)", fontSize:"11px", fontWeight:600, transition:"all 0.15s" }}>{s}</button>
+              ))}
+            </div>
+
+            {/* Fetch button */}
+            <button onClick={() => fetchNews(newsSector)} disabled={newsLoading} style={{ marginBottom:"28px", padding:"10px 24px", background:"rgba(52,211,153,0.12)", border:"1px solid rgba(52,211,153,0.3)", color:"#34D399", borderRadius:"8px", cursor:newsLoading?"not-allowed":"pointer", fontFamily:"var(--mono)", fontSize:"12px", fontWeight:600, letterSpacing:"0.08em", opacity:newsLoading?0.6:1 }}>
+              {newsLoading ? "FETCHING LIVE DATA..." : `↻ FETCH ${newsSector.toUpperCase()} NEWS`}
+            </button>
+
+            {newsError && <div style={{ background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.2)", borderRadius:"10px", padding:"14px 18px", color:"#F87171", fontFamily:"var(--mono)", fontSize:"13px", marginBottom:"20px" }}>{newsError}</div>}
+
+            {newsData.length > 0 && (
+              <div style={{ display:"grid", gap:"12px" }}>
+                {newsData.map((item, i) => (
+                  <div key={i} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"12px", padding:"18px 22px", borderLeft:`3px solid ${item.sentiment==="BULLISH"?"#34D399":item.sentiment==="BEARISH"?"#F87171":"#60A5FA"}` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"12px", marginBottom:"8px" }}>
+                      <div style={{ fontSize:"15px", fontWeight:600, lineHeight:1.35, flex:1 }}>{item.headline}</div>
+                      <div style={{ padding:"3px 10px", borderRadius:"20px", fontSize:"10px", fontWeight:700, fontFamily:"var(--mono)", letterSpacing:"0.08em", flexShrink:0, background:item.sentiment==="BULLISH"?"rgba(52,211,153,0.12)":item.sentiment==="BEARISH"?"rgba(248,113,113,0.12)":"rgba(96,165,250,0.12)", color:item.sentiment==="BULLISH"?"#34D399":item.sentiment==="BEARISH"?"#F87171":"#60A5FA", border:`1px solid ${item.sentiment==="BULLISH"?"rgba(52,211,153,0.2)":item.sentiment==="BEARISH"?"rgba(248,113,113,0.2)":"rgba(96,165,250,0.2)"}` }}>{item.sentiment}</div>
+                    </div>
+                    <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.6)", lineHeight:1.6, marginBottom:"10px" }}>{item.summary}</div>
+                    <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.25)", fontFamily:"var(--mono)" }}>{item.source}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {newsData.length === 0 && !newsLoading && !newsError && (
+              <div style={{ textAlign:"center", padding:"60px 20px", color:"rgba(255,255,255,0.2)", fontFamily:"var(--mono)", fontSize:"13px" }}>
+                Select a sector above and click FETCH NEWS to pull live intelligence
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1625,5 +1702,3 @@ function ResearchHub() {
   </script>
 </body>
 </html>
-
-
