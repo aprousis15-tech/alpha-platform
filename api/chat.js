@@ -7,32 +7,46 @@ export default async function handler(req, res) {
   let body = req.body;
   if (typeof body === 'string') body = JSON.parse(body);
 
-  const system = body?.system || "";
+  const system = body?.system || '';
   const messages = body?.messages || [];
   const max_tokens = body?.max_tokens || 3000;
+  const useSearch = body?.useSearch === true;
 
-  const systemText = system ? system + "\n\n" : "";
-  const userText = messages?.[0]?.content || "";
+  const systemText = system ? system + '\n\n' : '';
+  const userText = messages?.[0]?.content || '';
+
+  const requestBody = {
+    contents: [{ role: 'user', parts: [{ text: systemText + userText }] }],
+    generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
+  };
+
+  // Only add grounding when explicitly requested (live intelligence calls)
+  if (useSearch) {
+    requestBody.tools = [{ google_search: {} }];
+  }
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: systemText + userText }] }],
-        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
-      })
+      body: JSON.stringify(requestBody)
     }
   );
 
   const data = await response.json();
-  console.log("Gemini response:", JSON.stringify(data).slice(0, 500));
-  
-let text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-           data.error?.message || 
-           "No response from Gemini";
-text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  console.log('Chat API response:', JSON.stringify(data).slice(0, 300));
 
-  res.status(200).json({ content: [{ type: "text", text }] });
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text ||
+             data.error?.message ||
+             'No response from Gemini';
+  text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+  res.status(200).json({ content: [{ type: 'text', text }] });
 }
+
+
+
+
+
+
