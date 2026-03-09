@@ -30,7 +30,7 @@ const SCORECARD_PROMPT = `You are an elite institutional equity analyst. Return 
 RULES: Use actual reported figures. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period. Dollar figures required. If unsure, use "N/A".
 
 Return exactly:
-{"company":"string","ticker":"string","sector":"string","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
+{"company":"string","ticker":"string","sector":"string","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"qualityMetrics":{"roic":"string","roe":"string","grossMarginTrend":"string","fcfConversion":"string"},"growthMetrics":{"revenueCagr3yr":"string","earningsCagr3yr":"string","organicVsAcquired":"string"},"balanceSheet":{"currentRatio":"string","quickRatio":"string","interestCoverage":"string","debtToEbitda":"string"},"technicalOverlay":{"dma50vs200":"string","rsiZone":"string","volumeTrend":"string","trendDirection":"Bullish/Bearish/Neutral"},"fundamentalScore":75,"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
 
 const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. For WAY: NRR=112%, GRR=97%.
 
@@ -132,6 +132,17 @@ function ScorecardTab({ data }) {
   const vc = VERDICT[data.verdict] || VERDICT.HOLD;
   const rm = data.ratioMetrics || {};
   const dm = data.dollarMetrics || {};
+  const qm = data.qualityMetrics || {};
+  const gm = data.growthMetrics || {};
+  const bs = data.balanceSheet || {};
+  const to = data.technicalOverlay || {};
+  const fs = data.fundamentalScore;
+  const trendColors = { Bullish: "#34D399", Bearish: "#F87171", Neutral: "#FBBF24" };
+  const fsColor = fs >= 80 ? "#34D399" : fs >= 60 ? "#FBBF24" : "#F87171";
+  const hasQuality = qm.roic || qm.roe || qm.grossMarginTrend || qm.fcfConversion;
+  const hasGrowth = gm.revenueCagr3yr || gm.earningsCagr3yr || gm.organicVsAcquired;
+  const hasBalance = bs.currentRatio || bs.quickRatio || bs.interestCoverage || bs.debtToEbitda;
+  const hasTechnical = to.dma50vs200 || to.rsiZone || to.volumeTrend || to.trendDirection;
   return (
     <div className="fade-up">
       <Card style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "18px" }}>
@@ -171,6 +182,64 @@ function ScorecardTab({ data }) {
           <MetricCard label="Enterprise Value" value={dm.enterpriseValue} />
         </div>
       </div>
+      {hasQuality && (
+        <div style={{ marginBottom: "12px" }}>
+          <Label accent="#C084FC">Quality Metrics</Label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(148px,1fr))", gap: "8px" }}>
+            <MetricCard label="ROIC"               value={qm.roic}             accent="#34D399" />
+            <MetricCard label="ROE"                value={qm.roe}              accent="#34D399" />
+            <MetricCard label="Gross Margin Trend" value={qm.grossMarginTrend} />
+            <MetricCard label="FCF Conversion"     value={qm.fcfConversion}    />
+          </div>
+        </div>
+      )}
+      {hasGrowth && (
+        <div style={{ marginBottom: "12px" }}>
+          <Label accent="#60A5FA">Growth Metrics</Label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "8px" }}>
+            <MetricCard label="Revenue CAGR (3yr)"  value={gm.revenueCagr3yr}    accent="#60A5FA" />
+            <MetricCard label="Earnings CAGR (3yr)" value={gm.earningsCagr3yr}   accent="#60A5FA" />
+            <MetricCard label="Organic vs Acquired" value={gm.organicVsAcquired} />
+          </div>
+        </div>
+      )}
+      {hasBalance && (
+        <div style={{ marginBottom: "12px" }}>
+          <Label accent="#2DD4BF">Balance Sheet Health</Label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(128px,1fr))", gap: "8px" }}>
+            <MetricCard label="Current Ratio"     value={bs.currentRatio}     accent="#2DD4BF" />
+            <MetricCard label="Quick Ratio"       value={bs.quickRatio}       accent="#2DD4BF" />
+            <MetricCard label="Interest Coverage" value={bs.interestCoverage} accent="#2DD4BF" />
+            <MetricCard label="Debt / EBITDA"     value={bs.debtToEbitda}     />
+          </div>
+        </div>
+      )}
+      {hasTechnical && (
+        <div style={{ marginBottom: "12px" }}>
+          <Label accent="#F472B6">Technical Overlay</Label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "8px", marginBottom: "10px" }}>
+            <MetricCard label="50 / 200 DMA" value={to.dma50vs200}  />
+            <MetricCard label="RSI Zone"     value={to.rsiZone}     />
+            <MetricCard label="Volume Trend" value={to.volumeTrend} />
+          </div>
+          {to.trendDirection && (
+            <div style={{ display: "inline-block", background: `${(trendColors[to.trendDirection] || "#FBBF24")}15`, border: `1px solid ${(trendColors[to.trendDirection] || "#FBBF24")}40`, color: trendColors[to.trendDirection] || "#FBBF24", padding: "7px 18px", borderRadius: "7px", fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em" }}>
+              {to.trendDirection === "Bullish" ? "▲" : to.trendDirection === "Bearish" ? "▼" : "◆"} {to.trendDirection?.toUpperCase()}
+            </div>
+          )}
+        </div>
+      )}
+      {typeof fs === "number" && (
+        <Card style={{ marginBottom: "12px" }}>
+          <Label>Fundamental Score</Label>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.07)", borderRadius: "3px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(fs, 100)}%`, background: fsColor, borderRadius: "3px", transition: "width 1.2s ease", boxShadow: `0 0 8px ${fsColor}80` }} />
+            </div>
+            <span style={{ color: fsColor, fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 700, minWidth: "50px" }}>{fs}/100</span>
+          </div>
+        </Card>
+      )}
       <Card style={{ marginBottom: "12px" }}>
         <div style={{ marginBottom: "20px" }}><SecHead>Bull Thesis</SecHead><Prose>{data.currentThesis}</Prose></div>
         <div style={{ marginBottom: "20px" }}><SecHead>Bear Case</SecHead><Prose dim>{data.bearCase}</Prose></div>
@@ -627,18 +696,30 @@ export default function AlphaTerminal() {
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  const CLAUDE_MODEL = "claude-sonnet-4-20250514"; // swap to "claude-opus-4-6" if proxy supports it
+
   async function callClaude(system, userMsg, maxTokens = 3000) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, system, messages: [{ role: "user", content: userMsg }] }),
-    });
-    const raw = await res.json();
-    const text = raw.content?.filter(b => b.type === "text").map(b => b.text).join("") || "";
-    const cleaned = text.replace(/```json|```/g, "").trim();
-    const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
-    if (s === -1) throw new Error("No JSON in response");
-    return JSON.parse(cleaned.slice(s, e + 1));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: userMsg }] }),
+      });
+      clearTimeout(timeoutId);
+      const raw = await res.json();
+      const text = raw.content?.filter(b => b.type === "text").map(b => b.text).join("") || "";
+      const cleaned = text.replace(/```json|```/g, "").trim();
+      const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
+      if (s === -1) throw new Error("No JSON in response");
+      return JSON.parse(cleaned.slice(s, e + 1));
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === "AbortError") throw new Error("Request timed out after 60 seconds");
+      throw e;
+    }
   }
 
   async function analyze(t) {
@@ -658,7 +739,7 @@ export default function AlphaTerminal() {
 
     // Scorecard
     setScorecardLoading(true);
-    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 2000)
+    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000)
       .then(d => { setScorecardData(d); setHistory(prev => [{ ticker: d.ticker || q, verdict: d.verdict }, ...prev.filter(h => h.ticker !== (d.ticker || q))].slice(0, 8)); })
       .catch(() => setScorecardError("Scorecard analysis failed."))
       .finally(() => setScorecardLoading(false));
