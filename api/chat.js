@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   const requestBody = {
     contents: [{ role: 'user', parts: [{ text: systemText + userText }] }],
-    generationConfig: { maxOutputTokens: 8192, temperature: 0.1 },
+    generationConfig: { maxOutputTokens: Math.min(max_tokens || 8192, 8192), temperature: 0.1 },
     tools: [{ google_search: {} }]
   };
 
