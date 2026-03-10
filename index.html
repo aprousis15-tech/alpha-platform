@@ -504,6 +504,7 @@ function IntelTab({ ticker, onRun, data, loading, error }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4000,
+          useSearch: true,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           system: INTEL_SYSTEM,
           messages: [{
@@ -742,7 +743,7 @@ function AlphaTerminal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, system, messages: [{ role: "user", content: userMsg }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, useSearch: true, system, messages: [{ role: "user", content: userMsg }] }),
       });
       clearTimeout(timeoutId);
       const raw = await res.json();
