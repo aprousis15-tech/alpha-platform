@@ -47,12 +47,12 @@ const EXAMPLES = ["WAY", "MSFT", "NVDA", "META", "SNOW", "AAPL", "TSLA", "PLTR"]
 /* ── PROMPTS ── */
 const SCORECARD_PROMPT = `You are an elite institutional equity analyst. Return ONLY valid JSON, no markdown, no preamble, no explanation.
 
-RULES: Use actual reported figures. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period. Dollar figures required. If unsure, use "N/A".
+RULES: Use actual reported figures from the most recent filings and earnings. CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from the TV show Succession. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period. Dollar figures required. If unsure, use "N/A". Never fabricate financial data.
 
 Return exactly:
 {"company":"string","ticker":"string","sector":"string","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"qualityMetrics":{"roic":"string","roe":"string","grossMarginTrend":"string","fcfConversion":"string"},"growthMetrics":{"revenueCagr3yr":"string","earningsCagr3yr":"string","organicVsAcquired":"string"},"balanceSheet":{"currentRatio":"string","quickRatio":"string","interestCoverage":"string","debtToEbitda":"string"},"technicalOverlay":{"dma50vs200":"string","rsiZone":"string","volumeTrend":"string","trendDirection":"Bullish/Bearish/Neutral"},"fundamentalScore":75,"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
 
-const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. For WAY: NRR=112%, GRR=97%.
+const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from TV. For WAY: NRR=112%, GRR=97%. Never fabricate financial data — if unsure, state "N/A".
 
 Return ONLY valid JSON, no markdown, no preamble:
 
