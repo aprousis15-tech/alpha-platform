@@ -47,22 +47,26 @@ const EXAMPLES = ["WAY", "MSFT", "NVDA", "META", "SNOW", "AAPL", "TSLA", "PLTR"]
 /* ── PROMPTS ── */
 const SCORECARD_PROMPT = `You are an elite institutional equity analyst. Return ONLY valid JSON, no markdown, no preamble, no explanation.
 
-RULES: Use actual reported figures from the most recent filings and earnings. Only report data you can verify from search results — if you cannot confirm a metric, return "N/A" rather than estimating. CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from the TV show Succession. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period (e.g. "18.5x LTM"). Dollar figures required. stockPrice must include the date of the price in parentheses (e.g. "$425.50 (Mar 7, 2026)"). priceTarget must also include a timeframe. FCF yield must be calculated as LTM FCF / Market Cap. If you cannot verify a current stock price from search, use "N/A". Never fabricate financial data.
+RULES: Use actual reported figures from the most recent filings and earnings. Only report data you can verify from search results — if you cannot confirm a metric, return "N/A" rather than estimating. Cite source periods where possible (e.g. "34.5% (Q4 2025 10-K)"). CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from the TV show Succession. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period (e.g. "18.5x LTM"). Dollar figures required. stockPrice must include the date of the price in parentheses (e.g. "$425.50 (Mar 7, 2026)"). priceTarget must also include a timeframe. FCF yield must be calculated as LTM FCF / Market Cap. If you cannot verify a current stock price from search, use "N/A". Never fabricate financial data.
 
 Return exactly:
 {"company":"string","ticker":"string","sector":"string","stockPrice":"string — current price with date e.g. $425.50 (Mar 7, 2026)","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"qualityMetrics":{"roic":"string","roe":"string","grossMarginTrend":"string","fcfConversion":"string"},"growthMetrics":{"revenueCagr3yr":"string","earningsCagr3yr":"string","organicVsAcquired":"string"},"balanceSheet":{"currentRatio":"string","quickRatio":"string","interestCoverage":"string","debtToEbitda":"string"},"technicalOverlay":{"dma50vs200":"string","rsiZone":"string","volumeTrend":"string","trendDirection":"Bullish/Bearish/Neutral"},"fundamentalScore":75,"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
 
 const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from TV. For WAY: NRR=112%, GRR=97%. Never fabricate financial data — if unsure, state "N/A".
 
+IMPORTANT: stockPrice must include the date (e.g. "$42.50 (Mar 7, 2026)"). All financial metrics must be internally consistent — the same metric (net leverage, EV/EBITDA, revenue, etc.) must show the same value everywhere it appears. Cite the source of key data points where possible (e.g. "per Q4 2025 10-K", "per latest earnings call"). If you cannot verify a figure from search results, use "N/A".
+
 Return ONLY valid JSON, no markdown, no preamble:
 
-{"ticker":"string","company":"string","sector":"string","verdict":"BUY","conviction":8,"priceTarget":"string","thesisSummary":"3-4 sentence executive summary with highest conviction argument, mispricing reason, primary catalyst, risk/reward setup","keyHighlights":[{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"}],"businessModel":{"whatItDoes":"3-4 sentences plain English","revenueStreams":"2-3 sentences on sub vs transaction vs other mix","marketPosition":"2-3 sentences on competitive position and key customers","nonDiscretionary":"2 sentences on why customers cannot churn"},"moatAnalysis":{"rating":"Wide","dataAdvantage":"2-3 sentences","switchingCosts":"2-3 sentences with specific examples","scaleBenefits":"2 sentences","replicationBarrier":"2 sentences"},"customerEconomics":{"nrr":"metric + explanation","grossRetention":"metric + explanation","expansionMechanism":"how revenue grows within existing customers"},"structuralCatalyst":{"name":"string","explanation":"3-4 sentences plain English why this matters and timing","quantifiedImpact":"best estimate of revenue/earnings impact","risk":"1-2 sentences what prevents this"},"aiAngle":{"coreTechAsset":"string","monetization":"string","defensibility":"string","stackPosition":"platform or application layer and why that matters"},"fcfProfile":{"ltmFcf":"string","fcfMargin":"string","capexCharacter":"maintenance vs growth and what it means for cash conversion","growthPath":"2-3 sentences on what drives FCF growth next 3-5 years"},"financials":{"ltmRevenue":"string","ltmEbitda":"string","grossMargin":"string","revenueGrowth":"string","fwdRevGuide":"string","fwdEbitdaGuide":"string","netLeverage":"string","evEbitda":"string with period"},"debtStructure":{"grossDebt":"string","debtType":"string","deleveragingPath":"string","interestSavings":"string"},"competitive":{"primaryThreat":"string","assessment":"3-4 sentences how serious the threat is with evidence","defense":"where most and least defensible","shareGain":"gaining or losing share and where"},"bearCase":{"primaryRisk":"single biggest thesis killer","risks":[{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"}]},"valuation":{"primaryMetric":"right metric and why","currentMultiple":"string with period","peerMultiples":"string","targetMultiple":"string","priceTargetBuild":"step by step logic","bull":"upside scenario","base":"base case","bear":"downside scenario"},"mgmtQuestions":["string","string","string","string","string"],"catalystTimeline":[{"period":"0-3 months","catalyst":"string"},{"period":"3-6 months","catalyst":"string"},{"period":"6-18 months","catalyst":"string"}],"conclusion":"3-4 sentence final verdict","disclaimer":"AI-generated for educational purposes only. Not investment advice. Verify against primary sources."}`;
+{"ticker":"string","company":"string","sector":"string","stockPrice":"string — current price with date e.g. $42.50 (Mar 7, 2026)","verdict":"BUY","conviction":8,"priceTarget":"string with timeframe","thesisSummary":"3-4 sentence executive summary with highest conviction argument, mispricing reason, primary catalyst, risk/reward setup","keyHighlights":[{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"}],"businessModel":{"whatItDoes":"3-4 sentences plain English","revenueStreams":"2-3 sentences on sub vs transaction vs other mix","marketPosition":"2-3 sentences on competitive position and key customers","nonDiscretionary":"2 sentences on why customers cannot churn"},"moatAnalysis":{"rating":"Wide","dataAdvantage":"2-3 sentences","switchingCosts":"2-3 sentences with specific examples","scaleBenefits":"2 sentences","replicationBarrier":"2 sentences"},"customerEconomics":{"nrr":"metric + explanation","grossRetention":"metric + explanation","expansionMechanism":"how revenue grows within existing customers"},"structuralCatalyst":{"name":"string","explanation":"3-4 sentences plain English why this matters and timing","quantifiedImpact":"best estimate of revenue/earnings impact","risk":"1-2 sentences what prevents this"},"aiAngle":{"coreTechAsset":"string","monetization":"string","defensibility":"string","stackPosition":"platform or application layer and why that matters"},"fcfProfile":{"ltmFcf":"string","fcfMargin":"string","capexCharacter":"maintenance vs growth and what it means for cash conversion","growthPath":"2-3 sentences on what drives FCF growth next 3-5 years"},"financials":{"ltmRevenue":"string","ltmEbitda":"string","grossMargin":"string","revenueGrowth":"string","fwdRevGuide":"string","fwdEbitdaGuide":"string","netLeverage":"string","evEbitda":"string with period"},"debtStructure":{"grossDebt":"string","debtType":"string","deleveragingPath":"string","interestSavings":"string"},"competitive":{"primaryThreat":"string","assessment":"3-4 sentences how serious the threat is with evidence","defense":"where most and least defensible","shareGain":"gaining or losing share and where"},"bearCase":{"primaryRisk":"single biggest thesis killer","risks":[{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"}]},"valuation":{"primaryMetric":"right metric and why","currentMultiple":"string with period","peerMultiples":"string","targetMultiple":"string","priceTargetBuild":"step by step logic","bull":"upside scenario","base":"base case","bear":"downside scenario"},"mgmtQuestions":["string","string","string","string","string"],"catalystTimeline":[{"period":"0-3 months","catalyst":"string"},{"period":"3-6 months","catalyst":"string"},{"period":"6-18 months","catalyst":"string"}],"conclusion":"3-4 sentence final verdict","disclaimer":"AI-generated for educational purposes only. Not investment advice. Verify against primary sources."}`;
 
 const INTEL_SYSTEM = `You are a research analyst. The user will provide raw data fetched from SEC EDGAR, financial databases, and public sources about a stock. Your job is to synthesize this into actionable intelligence.
 
+CRITICAL: For every data point, include the source URL where possible. All SEC filings must link to the actual SEC EDGAR filing page. Earnings transcripts must link to the transcript source. 13F data must link to the filing. Use real, verifiable URLs — never fabricate a URL.
+
 Return ONLY valid JSON, no markdown:
 
-{"ticker":"string","fetchedAt":"string","secFindings":{"recentFilings":[{"type":"string","date":"string","keyTakeaway":"string"}],"insiderActivity":{"summary":"string","recentTransactions":[{"who":"string","type":"Buy/Sell","shares":"string","value":"string","date":"string","signal":"string"}]},"redFlags":["string"],"positiveSignals":["string"]},"institutionalOwnership":{"summary":"string","notableHolders":[{"fund":"string","position":"string","changeLastQ":"string","signal":"string"}],"smartMoneyTrend":"Accumulating / Distributing / Neutral","concentrationRisk":"string"},"shortInterest":{"shortFloat":"string","daysToCover":"string","trend":"Rising / Falling / Stable","interpretation":"string"},"earningsTranscript":{"lastEarningsDate":"string","managementTone":"Confident / Cautious / Mixed","keyQuotes":["string","string"],"guidanceVsConsensus":"string","languageShifts":"any notable changes in language vs prior quarter","redFlags":["string"],"bullishSignals":["string"]},"alternativeData":{"hiringSignals":"string","patentActivity":"string","regulatoryPipeline":"string","competitorMoves":"string"},"edgeAssessment":{"topInsight":"the single most non-consensus insight from all this data","whyItMatters":"string","actionableAngle":"string"},"disclaimer":"string"}`;
+{"ticker":"string","fetchedAt":"string","sourceLinks":{"secEdgar":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=&dateb=&owner=include&count=20","earningsTranscript":"URL to most recent earnings transcript","insiderTransactions":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=4&dateb=&owner=include&count=20","institutionalFilings":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=13F&dateb=&owner=include&count=10"},"secFindings":{"recentFilings":[{"type":"string","date":"string","keyTakeaway":"string","url":"direct URL to this specific filing on SEC EDGAR if available"}],"insiderActivity":{"summary":"string","recentTransactions":[{"who":"string","type":"Buy/Sell","shares":"string","value":"string","date":"string","signal":"string"}]},"redFlags":["string"],"positiveSignals":["string"]},"institutionalOwnership":{"summary":"string","notableHolders":[{"fund":"string","position":"string","changeLastQ":"string","signal":"string"}],"smartMoneyTrend":"Accumulating / Distributing / Neutral","concentrationRisk":"string"},"shortInterest":{"shortFloat":"string","daysToCover":"string","trend":"Rising / Falling / Stable","interpretation":"string"},"earningsTranscript":{"lastEarningsDate":"string","managementTone":"Confident / Cautious / Mixed","keyQuotes":["string","string"],"guidanceVsConsensus":"string","languageShifts":"any notable changes in language vs prior quarter","redFlags":["string"],"bullishSignals":["string"]},"alternativeData":{"hiringSignals":"string","patentActivity":"string","regulatoryPipeline":"string","competitorMoves":"string"},"edgeAssessment":{"topInsight":"the single most non-consensus insight from all this data","whyItMatters":"string","actionableAngle":"string"},"disclaimer":"string"}`;
 
 /* ── STYLES ── */
 const CSS = `
@@ -307,6 +311,7 @@ function WriteupTab({ data }) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ display: "inline-block", background: vc.bg, border: `1px solid ${vc.border}`, color: vc.color, padding: "10px 22px", borderRadius: "8px", fontFamily: "var(--mono)", fontSize: "17px", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "8px" }}>{data.verdict}</div>
+            {data.stockPrice && <div style={{ color: "#fff", fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, marginBottom: "3px" }}>{data.stockPrice}</div>}
             <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--mono)", fontSize: "13px", marginBottom: "3px" }}>{data.priceTarget}</div>
             <div style={{ color: "rgba(255,255,255,0.28)", fontFamily: "var(--mono)", fontSize: "11px" }}>Conviction {data.conviction}/10</div>
           </div>
@@ -580,11 +585,22 @@ Synthesize everything into the JSON format specified. Identify the single most n
   const et = rawData.earningsTranscript || {};
   const alt = rawData.alternativeData || {};
   const edge = rawData.edgeAssessment || {};
+  const srcLinks = rawData.sourceLinks || {};
 
   const smartMoneyColor = inst.smartMoneyTrend === "Accumulating" ? "#34D399" : inst.smartMoneyTrend === "Distributing" ? "#F87171" : "#FBBF24";
 
   return (
     <div className="fade-up">
+      {/* Quick source links */}
+      {(srcLinks.secEdgar || srcLinks.earningsTranscript || srcLinks.insiderTransactions || srcLinks.institutionalFilings) && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "14px" }}>
+          {[["SEC Filings", srcLinks.secEdgar], ["Earnings Transcript", srcLinks.earningsTranscript], ["Insider Trades (Form 4)", srcLinks.insiderTransactions], ["13F Filings", srcLinks.institutionalFilings]].map(([label, url]) => url ? (
+            <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.25)", color: "#60A5FA", padding: "6px 14px", borderRadius: "6px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em", textDecoration: "none", cursor: "pointer" }}>
+              ↗ {label}
+            </a>
+          ) : null)}
+        </div>
+      )}
       {/* Edge insight — lead with the alpha */}
       <div style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(96,165,250,0.08))", border: "1px solid rgba(52,211,153,0.25)", borderRadius: "14px", padding: "24px 26px", marginBottom: "16px" }}>
         <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#34D399", fontFamily: "var(--mono)", marginBottom: "10px" }}>⚡ Top Non-Consensus Insight</div>
@@ -665,10 +681,11 @@ Synthesize everything into the JSON format specified. Identify the single most n
         <SecHead>Recent SEC Filings</SecHead>
         {(sec.recentFilings||[]).map((f,i) => (
           <div key={i} style={{ display: "flex", gap: "16px", marginBottom: "12px", paddingBottom: "12px", borderBottom: i < (sec.recentFilings.length-1) ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-            <div style={{ minWidth: "48px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "5px", padding: "4px 6px", textAlign: "center", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 700, color: "rgba(255,255,255,0.55)", height: "fit-content" }}>{f.type}</div>
+            <div style={{ minWidth: "48px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "5px", padding: "4px 6px", textAlign: "center", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 700, color: "rgba(255,255,255,0.55)", height: "fit-content" }}>{f.url ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", textDecoration: "none" }}>{f.type}</a> : f.type}</div>
             <div>
               <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "var(--mono)", marginBottom: "4px" }}>{f.date}</div>
               <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "14px", lineHeight: 1.6 }}>{f.keyTakeaway}</div>
+              {f.url && <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", fontSize: "11px", fontFamily: "var(--mono)", textDecoration: "none", marginTop: "4px", display: "inline-block" }}>↗ View Filing</a>}
             </div>
           </div>
         ))}
@@ -719,7 +736,7 @@ function AlphaTerminal() {
 
   async function callClaude(system, userMsg, maxTokens = 3000) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -736,7 +753,7 @@ function AlphaTerminal() {
       return JSON.parse(cleaned.slice(s, e + 1));
     } catch (e) {
       clearTimeout(timeoutId);
-      if (e.name === "AbortError") throw new Error("Request timed out after 60 seconds");
+      if (e.name === "AbortError") throw new Error("Request timed out after 90 seconds");
       throw e;
     }
   }
@@ -744,8 +761,6 @@ function AlphaTerminal() {
   async function analyze(t) {
     const raw = (t || ticker).trim();
     if (!raw) return;
-    // If it looks like a ticker (1-5 caps/letters, no spaces), uppercase it
-    // If it's a company name, keep original casing but pass as-is
     const isTicker = /^[A-Za-z]{1,5}$/.test(raw);
     const q = isTicker ? raw.toUpperCase() : raw;
     setTicker(q);
@@ -754,21 +769,34 @@ function AlphaTerminal() {
     setWriteupData(null);
     setScorecardError(null);
     setWriteupError(null);
+    setScorecardLoading(true);
+    setWriteupLoading(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
-    // Scorecard
-    setScorecardLoading(true);
-    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000)
-      .then(d => { setScorecardData(d); setHistory(prev => [{ ticker: d.ticker || q, verdict: d.verdict }, ...prev.filter(h => h.ticker !== (d.ticker || q))].slice(0, 8)); })
-      .catch(() => setScorecardError("Scorecard analysis failed."))
-      .finally(() => setScorecardLoading(false));
-
-    // Write-up
-    setWriteupLoading(true);
-    callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${q}. If given a company name, identify the correct ticker. Be specific with real figures.`, 4000)
-      .then(d => setWriteupData(d))
-      .catch(() => setWriteupError("Write-up generation failed."))
-      .finally(() => setWriteupLoading(false));
+    try {
+      const combined = await callClaude(
+        SCORECARD_PROMPT + `\n\nAFTER the scorecard JSON above, ALSO include a full IC write-up in the SAME response. Return a single JSON object with TWO top-level keys: "scorecard" containing the scorecard data, and "writeup" containing the IC memorandum data.\n\nThe writeup must follow this schema:\n` + WRITEUP_PROMPT.split('Return ONLY valid JSON, no markdown, no preamble:\n\n')[1],
+        `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically. Return BOTH the scorecard AND the full IC write-up in a single JSON response with keys "scorecard" and "writeup". All financial metrics MUST be identical between scorecard and writeup — use the same figures for net leverage, EV/EBITDA, revenue, market cap, etc. in both sections. Be specific with real figures.`,
+        8000
+      );
+      // Handle both combined format {"scorecard":{...},"writeup":{...}} and legacy single format
+      if (combined.scorecard && combined.writeup) {
+        setScorecardData(combined.scorecard);
+        setWriteupData(combined.writeup);
+        setHistory(prev => [{ ticker: combined.scorecard.ticker || q, verdict: combined.scorecard.verdict }, ...prev.filter(h => h.ticker !== (combined.scorecard.ticker || q))].slice(0, 8));
+      } else {
+        // Fallback: if model returns flat scorecard JSON, use it for scorecard only
+        setScorecardData(combined);
+        setHistory(prev => [{ ticker: combined.ticker || q, verdict: combined.verdict }, ...prev.filter(h => h.ticker !== (combined.ticker || q))].slice(0, 8));
+        setWriteupError("Write-up not included in response. Try again.");
+      }
+    } catch (err) {
+      setScorecardError("Analysis failed: " + (err.message || "Unknown error"));
+      setWriteupError("Analysis failed: " + (err.message || "Unknown error"));
+    } finally {
+      setScorecardLoading(false);
+      setWriteupLoading(false);
+    }
   }
 
   const hasData = scorecardData || writeupData || scorecardLoading || writeupLoading;
@@ -828,14 +856,14 @@ function AlphaTerminal() {
         )}
 
         {activeTab === "scorecard" && (
-          scorecardLoading ? <Spinner label="RUNNING 6-LENS SCORECARD" /> :
+          scorecardLoading ? <Spinner label="RUNNING FULL ANALYSIS — SCORECARD + IC WRITE-UP" /> :
           scorecardError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{scorecardError}</div> :
           scorecardData ? <ScorecardTab data={scorecardData} /> : null
         )}
 
         {activeTab === "writeup" && (
-          writeupLoading ? <Spinner label="GENERATING IC MEMORANDUM" /> :
-          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => { setWriteupError(null); setWriteupLoading(true); callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${analyzedTicker}. Be specific with real figures.`, 4000).then(d => setWriteupData(d)).catch(() => setWriteupError("Write-up generation failed.")).finally(() => setWriteupLoading(false)); }} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY</button></div> :
+          writeupLoading ? <Spinner label="RUNNING FULL ANALYSIS — SCORECARD + IC WRITE-UP" /> :
+          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => analyze(analyzedTicker)} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY FULL ANALYSIS</button></div> :
           writeupData ? <WriteupTab data={writeupData} /> : null
         )}
 
