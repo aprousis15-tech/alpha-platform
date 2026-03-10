@@ -17,13 +17,9 @@ export default async function handler(req, res) {
 
   const requestBody = {
     contents: [{ role: 'user', parts: [{ text: systemText + userText }] }],
-    generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
+    generationConfig: { maxOutputTokens: 8192, temperature: 0.1 },
+    tools: [{ google_search: {} }]
   };
-
-  // Only add grounding when explicitly requested (live intelligence calls)
-  if (useSearch) {
-    requestBody.tools = [{ google_search: {} }];
-  }
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -44,9 +40,3 @@ export default async function handler(req, res) {
 
   res.status(200).json({ content: [{ type: 'text', text }] });
 }
-
-
-
-
-
-
