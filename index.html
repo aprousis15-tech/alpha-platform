@@ -773,25 +773,17 @@ function AlphaTerminal() {
     setWriteupLoading(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
-    // Step 1: Scorecard first
-    try {
-      const sc = await callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000);
-      setScorecardData(sc);
-      setScorecardLoading(false);
-      setHistory(prev => [{ ticker: sc.ticker || q, verdict: sc.verdict }, ...prev.filter(h => h.ticker !== (sc.ticker || q))].slice(0, 8));
+    // Scorecard
+    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000)
+      .then(d => { setScorecardData(d); setHistory(prev => [{ ticker: d.ticker || q, verdict: d.verdict }, ...prev.filter(h => h.ticker !== (d.ticker || q))].slice(0, 8)); })
+      .catch(() => setScorecardError("Scorecard analysis failed."))
+      .finally(() => setScorecardLoading(false));
 
-      // Step 2: Write-up — pass scorecard financials so metrics are consistent
-      const financialContext = `Use these EXACT figures (already verified from scorecard): stockPrice=${sc.stockPrice||"N/A"}, LTM Revenue=${sc.dollarMetrics?.ltmRevenue||"N/A"}, LTM EBITDA=${sc.dollarMetrics?.ltmEbitda||"N/A"}, Market Cap=${sc.dollarMetrics?.marketCap||"N/A"}, EV=${sc.dollarMetrics?.enterpriseValue||"N/A"}, Net Leverage=${sc.ratioMetrics?.netLeverage||"N/A"}, EV/EBITDA=${sc.ratioMetrics?.evEbitda||"N/A"}, Rev Growth=${sc.ratioMetrics?.revenueGrowth||"N/A"}, EBITDA Margin=${sc.ratioMetrics?.ebitdaMargin||"N/A"}, FCF Yield=${sc.ratioMetrics?.fcfYield||"N/A"}.`;
-      callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${sc.ticker || q} (${sc.company || q}). ${financialContext} All financial metrics in the write-up MUST match these scorecard figures exactly. Do not recalculate or re-estimate — use these numbers as given.`, 4000)
-        .then(d => setWriteupData(d))
-        .catch(() => setWriteupError("Write-up generation failed."))
-        .finally(() => setWriteupLoading(false));
-    } catch (err) {
-      setScorecardError("Scorecard analysis failed: " + (err.message || "Unknown error"));
-      setScorecardLoading(false);
-      setWriteupError("Write-up skipped — scorecard failed.");
-      setWriteupLoading(false);
-    }
+    // Write-up
+    callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${q}. If given a company name, identify the correct ticker. Be specific with real figures.`, 4000)
+      .then(d => setWriteupData(d))
+      .catch(() => setWriteupError("Write-up generation failed."))
+      .finally(() => setWriteupLoading(false));
   }
 
   const hasData = scorecardData || writeupData || scorecardLoading || writeupLoading;
