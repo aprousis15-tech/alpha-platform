@@ -736,7 +736,7 @@ function AlphaTerminal() {
 
   async function callClaude(system, userMsg, maxTokens = 3000) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -753,7 +753,7 @@ function AlphaTerminal() {
       return JSON.parse(cleaned.slice(s, e + 1));
     } catch (e) {
       clearTimeout(timeoutId);
-      if (e.name === "AbortError") throw new Error("Request timed out after 90 seconds");
+      if (e.name === "AbortError") throw new Error("Request timed out after 60 seconds");
       throw e;
     }
   }
@@ -773,28 +773,23 @@ function AlphaTerminal() {
     setWriteupLoading(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
+    // Step 1: Scorecard first
     try {
-      const combined = await callClaude(
-        SCORECARD_PROMPT + `\n\nAFTER the scorecard JSON above, ALSO include a full IC write-up in the SAME response. Return a single JSON object with TWO top-level keys: "scorecard" containing the scorecard data, and "writeup" containing the IC memorandum data.\n\nThe writeup must follow this schema:\n` + WRITEUP_PROMPT.split('Return ONLY valid JSON, no markdown, no preamble:\n\n')[1],
-        `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically. Return BOTH the scorecard AND the full IC write-up in a single JSON response with keys "scorecard" and "writeup". All financial metrics MUST be identical between scorecard and writeup — use the same figures for net leverage, EV/EBITDA, revenue, market cap, etc. in both sections. Be specific with real figures.`,
-        8000
-      );
-      // Handle both combined format {"scorecard":{...},"writeup":{...}} and legacy single format
-      if (combined.scorecard && combined.writeup) {
-        setScorecardData(combined.scorecard);
-        setWriteupData(combined.writeup);
-        setHistory(prev => [{ ticker: combined.scorecard.ticker || q, verdict: combined.scorecard.verdict }, ...prev.filter(h => h.ticker !== (combined.scorecard.ticker || q))].slice(0, 8));
-      } else {
-        // Fallback: if model returns flat scorecard JSON, use it for scorecard only
-        setScorecardData(combined);
-        setHistory(prev => [{ ticker: combined.ticker || q, verdict: combined.verdict }, ...prev.filter(h => h.ticker !== (combined.ticker || q))].slice(0, 8));
-        setWriteupError("Write-up not included in response. Try again.");
-      }
-    } catch (err) {
-      setScorecardError("Analysis failed: " + (err.message || "Unknown error"));
-      setWriteupError("Analysis failed: " + (err.message || "Unknown error"));
-    } finally {
+      const sc = await callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000);
+      setScorecardData(sc);
       setScorecardLoading(false);
+      setHistory(prev => [{ ticker: sc.ticker || q, verdict: sc.verdict }, ...prev.filter(h => h.ticker !== (sc.ticker || q))].slice(0, 8));
+
+      // Step 2: Write-up — pass scorecard financials so metrics are consistent
+      const financialContext = `Use these EXACT figures (already verified from scorecard): stockPrice=${sc.stockPrice||"N/A"}, LTM Revenue=${sc.dollarMetrics?.ltmRevenue||"N/A"}, LTM EBITDA=${sc.dollarMetrics?.ltmEbitda||"N/A"}, Market Cap=${sc.dollarMetrics?.marketCap||"N/A"}, EV=${sc.dollarMetrics?.enterpriseValue||"N/A"}, Net Leverage=${sc.ratioMetrics?.netLeverage||"N/A"}, EV/EBITDA=${sc.ratioMetrics?.evEbitda||"N/A"}, Rev Growth=${sc.ratioMetrics?.revenueGrowth||"N/A"}, EBITDA Margin=${sc.ratioMetrics?.ebitdaMargin||"N/A"}, FCF Yield=${sc.ratioMetrics?.fcfYield||"N/A"}.`;
+      callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${sc.ticker || q} (${sc.company || q}). ${financialContext} All financial metrics in the write-up MUST match these scorecard figures exactly. Do not recalculate or re-estimate — use these numbers as given.`, 4000)
+        .then(d => setWriteupData(d))
+        .catch(() => setWriteupError("Write-up generation failed."))
+        .finally(() => setWriteupLoading(false));
+    } catch (err) {
+      setScorecardError("Scorecard analysis failed: " + (err.message || "Unknown error"));
+      setScorecardLoading(false);
+      setWriteupError("Write-up skipped — scorecard failed.");
       setWriteupLoading(false);
     }
   }
@@ -856,14 +851,14 @@ function AlphaTerminal() {
         )}
 
         {activeTab === "scorecard" && (
-          scorecardLoading ? <Spinner label="RUNNING FULL ANALYSIS — SCORECARD + IC WRITE-UP" /> :
+          scorecardLoading ? <Spinner label="RUNNING 6-LENS SCORECARD" /> :
           scorecardError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{scorecardError}</div> :
           scorecardData ? <ScorecardTab data={scorecardData} /> : null
         )}
 
         {activeTab === "writeup" && (
-          writeupLoading ? <Spinner label="RUNNING FULL ANALYSIS — SCORECARD + IC WRITE-UP" /> :
-          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => analyze(analyzedTicker)} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY FULL ANALYSIS</button></div> :
+          writeupLoading ? <Spinner label="GENERATING IC MEMORANDUM" /> :
+          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => analyze(analyzedTicker)} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY</button></div> :
           writeupData ? <WriteupTab data={writeupData} /> : null
         )}
 
