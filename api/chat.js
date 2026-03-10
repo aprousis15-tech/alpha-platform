@@ -20,7 +20,6 @@ export default async function handler(req, res) {
     generationConfig: { maxOutputTokens: 8192, temperature: 0.1 }
   };
 
-  // Only add grounding when explicitly requested (live intelligence calls)
   if (useSearch) {
     requestBody.tools = [{ google_search: {} }];
   }
@@ -35,11 +34,19 @@ export default async function handler(req, res) {
   );
 
   const data = await response.json();
-  console.log('Chat API response:', JSON.stringify(data).slice(0, 300));
+  console.log('Chat API response:', JSON.stringify(data).slice(0, 500));
 
-  let text = data.candidates?.[0]?.content?.parts?.[0]?.text ||
-             data.error?.message ||
-             'No response from Gemini';
+  // Extract ALL text parts — grounded responses split text across multiple parts
+  let text = '';
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  for (const part of parts) {
+    if (part.text) text += part.text;
+  }
+
+  if (!text) {
+    text = data.error?.message || 'No response from Gemini';
+  }
+
   text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   res.status(200).json({ content: [{ type: 'text', text }] });
