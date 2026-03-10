@@ -47,26 +47,22 @@ const EXAMPLES = ["WAY", "MSFT", "NVDA", "META", "SNOW", "AAPL", "TSLA", "PLTR"]
 /* ── PROMPTS ── */
 const SCORECARD_PROMPT = `You are an elite institutional equity analyst. Return ONLY valid JSON, no markdown, no preamble, no explanation.
 
-RULES: Use actual reported figures from the most recent filings and earnings. Only report data you can verify from search results — if you cannot confirm a metric, return "N/A" rather than estimating. Cite source periods where possible (e.g. "34.5% (Q4 2025 10-K)"). CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from the TV show Succession. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period (e.g. "18.5x LTM"). Dollar figures required. stockPrice must include the date of the price in parentheses (e.g. "$425.50 (Mar 7, 2026)"). priceTarget must also include a timeframe. FCF yield must be calculated as LTM FCF / Market Cap. If you cannot verify a current stock price from search, use "N/A". Never fabricate financial data.
+RULES: Use actual reported figures. For WAY: NRR=112%, GRR=97%. EV/EBITDA must include period. Dollar figures required. If unsure, use "N/A".
 
 Return exactly:
-{"company":"string","ticker":"string","sector":"string","stockPrice":"string — current price with date e.g. $425.50 (Mar 7, 2026)","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"qualityMetrics":{"roic":"string","roe":"string","grossMarginTrend":"string","fcfConversion":"string"},"growthMetrics":{"revenueCagr3yr":"string","earningsCagr3yr":"string","organicVsAcquired":"string"},"balanceSheet":{"currentRatio":"string","quickRatio":"string","interestCoverage":"string","debtToEbitda":"string"},"technicalOverlay":{"dma50vs200":"string","rsiZone":"string","volumeTrend":"string","trendDirection":"Bullish/Bearish/Neutral"},"fundamentalScore":75,"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
+{"company":"string","ticker":"string","sector":"string","currentThesis":"string","bearCase":"string","moat":"string","catalysts":["s","s","s"],"risks":["s","s","s"],"ratioMetrics":{"nrr":"string","grossRetention":"string","ebitdaMargin":"string","fcfYield":"string","netLeverage":"string","evEbitda":"string","revenueGrowth":"string"},"dollarMetrics":{"ltmRevenue":"string","ltmEbitda":"string","fwdRevenueGuide":"string","fwdEbitdaGuide":"string","marketCap":"string","enterpriseValue":"string"},"druckenmillerTake":"string","buffettTake":"string","marksTake":"string","andreessenTake":"string","sundheimTake":"string","colemanTake":"string","verdict":"BUY","conviction":8,"priceTarget":"string","disclaimer":"string"}`;
 
-const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. CRITICAL: WAY = Waystar Holdings (healthcare payments technology, NYSE: WAY) — NOT the fictional "Waystar Royco" from TV. For WAY: NRR=112%, GRR=97%. Never fabricate financial data — if unsure, state "N/A".
-
-IMPORTANT: stockPrice must include the date (e.g. "$42.50 (Mar 7, 2026)"). All financial metrics must be internally consistent — the same metric (net leverage, EV/EBITDA, revenue, etc.) must show the same value everywhere it appears. Cite the source of key data points where possible (e.g. "per Q4 2025 10-K", "per latest earnings call"). If you cannot verify a figure from search results, use "N/A".
+const WRITEUP_PROMPT = `You are a senior hedge fund analyst writing an IC investment memorandum. Be specific, opinionated, and cite actual figures. For WAY: NRR=112%, GRR=97%.
 
 Return ONLY valid JSON, no markdown, no preamble:
 
-{"ticker":"string","company":"string","sector":"string","stockPrice":"string — current price with date e.g. $42.50 (Mar 7, 2026)","verdict":"BUY","conviction":8,"priceTarget":"string with timeframe","thesisSummary":"3-4 sentence executive summary with highest conviction argument, mispricing reason, primary catalyst, risk/reward setup","keyHighlights":[{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"}],"businessModel":{"whatItDoes":"3-4 sentences plain English","revenueStreams":"2-3 sentences on sub vs transaction vs other mix","marketPosition":"2-3 sentences on competitive position and key customers","nonDiscretionary":"2 sentences on why customers cannot churn"},"moatAnalysis":{"rating":"Wide","dataAdvantage":"2-3 sentences","switchingCosts":"2-3 sentences with specific examples","scaleBenefits":"2 sentences","replicationBarrier":"2 sentences"},"customerEconomics":{"nrr":"metric + explanation","grossRetention":"metric + explanation","expansionMechanism":"how revenue grows within existing customers"},"structuralCatalyst":{"name":"string","explanation":"3-4 sentences plain English why this matters and timing","quantifiedImpact":"best estimate of revenue/earnings impact","risk":"1-2 sentences what prevents this"},"aiAngle":{"coreTechAsset":"string","monetization":"string","defensibility":"string","stackPosition":"platform or application layer and why that matters"},"fcfProfile":{"ltmFcf":"string","fcfMargin":"string","capexCharacter":"maintenance vs growth and what it means for cash conversion","growthPath":"2-3 sentences on what drives FCF growth next 3-5 years"},"financials":{"ltmRevenue":"string","ltmEbitda":"string","grossMargin":"string","revenueGrowth":"string","fwdRevGuide":"string","fwdEbitdaGuide":"string","netLeverage":"string","evEbitda":"string with period"},"debtStructure":{"grossDebt":"string","debtType":"string","deleveragingPath":"string","interestSavings":"string"},"competitive":{"primaryThreat":"string","assessment":"3-4 sentences how serious the threat is with evidence","defense":"where most and least defensible","shareGain":"gaining or losing share and where"},"bearCase":{"primaryRisk":"single biggest thesis killer","risks":[{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"}]},"valuation":{"primaryMetric":"right metric and why","currentMultiple":"string with period","peerMultiples":"string","targetMultiple":"string","priceTargetBuild":"step by step logic","bull":"upside scenario","base":"base case","bear":"downside scenario"},"mgmtQuestions":["string","string","string","string","string"],"catalystTimeline":[{"period":"0-3 months","catalyst":"string"},{"period":"3-6 months","catalyst":"string"},{"period":"6-18 months","catalyst":"string"}],"conclusion":"3-4 sentence final verdict","disclaimer":"AI-generated for educational purposes only. Not investment advice. Verify against primary sources."}`;
+{"ticker":"string","company":"string","sector":"string","verdict":"BUY","conviction":8,"priceTarget":"string","thesisSummary":"3-4 sentence executive summary with highest conviction argument, mispricing reason, primary catalyst, risk/reward setup","keyHighlights":[{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"},{"title":"string","body":"string"}],"businessModel":{"whatItDoes":"3-4 sentences plain English","revenueStreams":"2-3 sentences on sub vs transaction vs other mix","marketPosition":"2-3 sentences on competitive position and key customers","nonDiscretionary":"2 sentences on why customers cannot churn"},"moatAnalysis":{"rating":"Wide","dataAdvantage":"2-3 sentences","switchingCosts":"2-3 sentences with specific examples","scaleBenefits":"2 sentences","replicationBarrier":"2 sentences"},"customerEconomics":{"nrr":"metric + explanation","grossRetention":"metric + explanation","expansionMechanism":"how revenue grows within existing customers"},"structuralCatalyst":{"name":"string","explanation":"3-4 sentences plain English why this matters and timing","quantifiedImpact":"best estimate of revenue/earnings impact","risk":"1-2 sentences what prevents this"},"aiAngle":{"coreTechAsset":"string","monetization":"string","defensibility":"string","stackPosition":"platform or application layer and why that matters"},"fcfProfile":{"ltmFcf":"string","fcfMargin":"string","capexCharacter":"maintenance vs growth and what it means for cash conversion","growthPath":"2-3 sentences on what drives FCF growth next 3-5 years"},"financials":{"ltmRevenue":"string","ltmEbitda":"string","grossMargin":"string","revenueGrowth":"string","fwdRevGuide":"string","fwdEbitdaGuide":"string","netLeverage":"string","evEbitda":"string with period"},"debtStructure":{"grossDebt":"string","debtType":"string","deleveragingPath":"string","interestSavings":"string"},"competitive":{"primaryThreat":"string","assessment":"3-4 sentences how serious the threat is with evidence","defense":"where most and least defensible","shareGain":"gaining or losing share and where"},"bearCase":{"primaryRisk":"single biggest thesis killer","risks":[{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"},{"risk":"string","detail":"2-3 sentences","mitigant":"1-2 sentences"}]},"valuation":{"primaryMetric":"right metric and why","currentMultiple":"string with period","peerMultiples":"string","targetMultiple":"string","priceTargetBuild":"step by step logic","bull":"upside scenario","base":"base case","bear":"downside scenario"},"mgmtQuestions":["string","string","string","string","string"],"catalystTimeline":[{"period":"0-3 months","catalyst":"string"},{"period":"3-6 months","catalyst":"string"},{"period":"6-18 months","catalyst":"string"}],"conclusion":"3-4 sentence final verdict","disclaimer":"AI-generated for educational purposes only. Not investment advice. Verify against primary sources."}`;
 
 const INTEL_SYSTEM = `You are a research analyst. The user will provide raw data fetched from SEC EDGAR, financial databases, and public sources about a stock. Your job is to synthesize this into actionable intelligence.
 
-CRITICAL: For every data point, include the source URL where possible. All SEC filings must link to the actual SEC EDGAR filing page. Earnings transcripts must link to the transcript source. 13F data must link to the filing. Use real, verifiable URLs — never fabricate a URL.
-
 Return ONLY valid JSON, no markdown:
 
-{"ticker":"string","fetchedAt":"string","sourceLinks":{"secEdgar":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=&dateb=&owner=include&count=20","earningsTranscript":"URL to most recent earnings transcript","insiderTransactions":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=4&dateb=&owner=include&count=20","institutionalFilings":"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=TICKER&type=13F&dateb=&owner=include&count=10"},"secFindings":{"recentFilings":[{"type":"string","date":"string","keyTakeaway":"string","url":"direct URL to this specific filing on SEC EDGAR if available"}],"insiderActivity":{"summary":"string","recentTransactions":[{"who":"string","type":"Buy/Sell","shares":"string","value":"string","date":"string","signal":"string"}]},"redFlags":["string"],"positiveSignals":["string"]},"institutionalOwnership":{"summary":"string","notableHolders":[{"fund":"string","position":"string","changeLastQ":"string","signal":"string"}],"smartMoneyTrend":"Accumulating / Distributing / Neutral","concentrationRisk":"string"},"shortInterest":{"shortFloat":"string","daysToCover":"string","trend":"Rising / Falling / Stable","interpretation":"string"},"earningsTranscript":{"lastEarningsDate":"string","managementTone":"Confident / Cautious / Mixed","keyQuotes":["string","string"],"guidanceVsConsensus":"string","languageShifts":"any notable changes in language vs prior quarter","redFlags":["string"],"bullishSignals":["string"]},"alternativeData":{"hiringSignals":"string","patentActivity":"string","regulatoryPipeline":"string","competitorMoves":"string"},"edgeAssessment":{"topInsight":"the single most non-consensus insight from all this data","whyItMatters":"string","actionableAngle":"string"},"disclaimer":"string"}`;
+{"ticker":"string","fetchedAt":"string","secFindings":{"recentFilings":[{"type":"string","date":"string","keyTakeaway":"string"}],"insiderActivity":{"summary":"string","recentTransactions":[{"who":"string","type":"Buy/Sell","shares":"string","value":"string","date":"string","signal":"string"}]},"redFlags":["string"],"positiveSignals":["string"]},"institutionalOwnership":{"summary":"string","notableHolders":[{"fund":"string","position":"string","changeLastQ":"string","signal":"string"}],"smartMoneyTrend":"Accumulating / Distributing / Neutral","concentrationRisk":"string"},"shortInterest":{"shortFloat":"string","daysToCover":"string","trend":"Rising / Falling / Stable","interpretation":"string"},"earningsTranscript":{"lastEarningsDate":"string","managementTone":"Confident / Cautious / Mixed","keyQuotes":["string","string"],"guidanceVsConsensus":"string","languageShifts":"any notable changes in language vs prior quarter","redFlags":["string"],"bullishSignals":["string"]},"alternativeData":{"hiringSignals":"string","patentActivity":"string","regulatoryPipeline":"string","competitorMoves":"string"},"edgeAssessment":{"topInsight":"the single most non-consensus insight from all this data","whyItMatters":"string","actionableAngle":"string"},"disclaimer":"string"}`;
 
 /* ── STYLES ── */
 const CSS = `
@@ -156,17 +152,6 @@ function ScorecardTab({ data }) {
   const vc = VERDICT[data.verdict] || VERDICT.HOLD;
   const rm = data.ratioMetrics || {};
   const dm = data.dollarMetrics || {};
-  const qm = data.qualityMetrics || {};
-  const gm = data.growthMetrics || {};
-  const bs = data.balanceSheet || {};
-  const to = data.technicalOverlay || {};
-  const fs = data.fundamentalScore;
-  const trendColors = { Bullish: "#34D399", Bearish: "#F87171", Neutral: "#FBBF24" };
-  const fsColor = fs >= 80 ? "#34D399" : fs >= 60 ? "#FBBF24" : "#F87171";
-  const hasQuality = qm.roic || qm.roe || qm.grossMarginTrend || qm.fcfConversion;
-  const hasGrowth = gm.revenueCagr3yr || gm.earningsCagr3yr || gm.organicVsAcquired;
-  const hasBalance = bs.currentRatio || bs.quickRatio || bs.interestCoverage || bs.debtToEbitda;
-  const hasTechnical = to.dma50vs200 || to.rsiZone || to.volumeTrend || to.trendDirection;
   return (
     <div className="fade-up">
       <Card style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "18px" }}>
@@ -179,7 +164,6 @@ function ScorecardTab({ data }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ display: "inline-block", background: vc.bg, border: `1px solid ${vc.border}`, color: vc.color, padding: "9px 20px", borderRadius: "8px", fontFamily: "var(--mono)", fontSize: "16px", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "7px" }}>{data.verdict}</div>
-          {data.stockPrice && <div style={{ color: "#fff", fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, marginBottom: "2px" }}>{data.stockPrice}</div>}
           <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--mono)", fontSize: "12px" }}>{data.priceTarget}</div>
         </div>
       </Card>
@@ -207,64 +191,6 @@ function ScorecardTab({ data }) {
           <MetricCard label="Enterprise Value" value={dm.enterpriseValue} />
         </div>
       </div>
-      {hasQuality && (
-        <div style={{ marginBottom: "12px" }}>
-          <Label accent="#C084FC">Quality Metrics</Label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(148px,1fr))", gap: "8px" }}>
-            <MetricCard label="ROIC"               value={qm.roic}             accent="#34D399" />
-            <MetricCard label="ROE"                value={qm.roe}              accent="#34D399" />
-            <MetricCard label="Gross Margin Trend" value={qm.grossMarginTrend} />
-            <MetricCard label="FCF Conversion"     value={qm.fcfConversion}    />
-          </div>
-        </div>
-      )}
-      {hasGrowth && (
-        <div style={{ marginBottom: "12px" }}>
-          <Label accent="#60A5FA">Growth Metrics</Label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "8px" }}>
-            <MetricCard label="Revenue CAGR (3yr)"  value={gm.revenueCagr3yr}    accent="#60A5FA" />
-            <MetricCard label="Earnings CAGR (3yr)" value={gm.earningsCagr3yr}   accent="#60A5FA" />
-            <MetricCard label="Organic vs Acquired" value={gm.organicVsAcquired} />
-          </div>
-        </div>
-      )}
-      {hasBalance && (
-        <div style={{ marginBottom: "12px" }}>
-          <Label accent="#2DD4BF">Balance Sheet Health</Label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(128px,1fr))", gap: "8px" }}>
-            <MetricCard label="Current Ratio"     value={bs.currentRatio}     accent="#2DD4BF" />
-            <MetricCard label="Quick Ratio"       value={bs.quickRatio}       accent="#2DD4BF" />
-            <MetricCard label="Interest Coverage" value={bs.interestCoverage} accent="#2DD4BF" />
-            <MetricCard label="Debt / EBITDA"     value={bs.debtToEbitda}     />
-          </div>
-        </div>
-      )}
-      {hasTechnical && (
-        <div style={{ marginBottom: "12px" }}>
-          <Label accent="#F472B6">Technical Overlay</Label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "8px", marginBottom: "10px" }}>
-            <MetricCard label="50 / 200 DMA" value={to.dma50vs200}  />
-            <MetricCard label="RSI Zone"     value={to.rsiZone}     />
-            <MetricCard label="Volume Trend" value={to.volumeTrend} />
-          </div>
-          {to.trendDirection && (
-            <div style={{ display: "inline-block", background: `${(trendColors[to.trendDirection] || "#FBBF24")}15`, border: `1px solid ${(trendColors[to.trendDirection] || "#FBBF24")}40`, color: trendColors[to.trendDirection] || "#FBBF24", padding: "7px 18px", borderRadius: "7px", fontFamily: "var(--mono)", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em" }}>
-              {to.trendDirection === "Bullish" ? "▲" : to.trendDirection === "Bearish" ? "▼" : "◆"} {to.trendDirection?.toUpperCase()}
-            </div>
-          )}
-        </div>
-      )}
-      {typeof fs === "number" && (
-        <Card style={{ marginBottom: "12px" }}>
-          <Label>Fundamental Score</Label>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.07)", borderRadius: "3px", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${Math.min(fs, 100)}%`, background: fsColor, borderRadius: "3px", transition: "width 1.2s ease", boxShadow: `0 0 8px ${fsColor}80` }} />
-            </div>
-            <span style={{ color: fsColor, fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 700, minWidth: "50px" }}>{fs}/100</span>
-          </div>
-        </Card>
-      )}
       <Card style={{ marginBottom: "12px" }}>
         <div style={{ marginBottom: "20px" }}><SecHead>Bull Thesis</SecHead><Prose>{data.currentThesis}</Prose></div>
         <div style={{ marginBottom: "20px" }}><SecHead>Bear Case</SecHead><Prose dim>{data.bearCase}</Prose></div>
@@ -311,7 +237,6 @@ function WriteupTab({ data }) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ display: "inline-block", background: vc.bg, border: `1px solid ${vc.border}`, color: vc.color, padding: "10px 22px", borderRadius: "8px", fontFamily: "var(--mono)", fontSize: "17px", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "8px" }}>{data.verdict}</div>
-            {data.stockPrice && <div style={{ color: "#fff", fontFamily: "var(--mono)", fontSize: "15px", fontWeight: 600, marginBottom: "3px" }}>{data.stockPrice}</div>}
             <div style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--mono)", fontSize: "13px", marginBottom: "3px" }}>{data.priceTarget}</div>
             <div style={{ color: "rgba(255,255,255,0.28)", fontFamily: "var(--mono)", fontSize: "11px" }}>Conviction {data.conviction}/10</div>
           </div>
@@ -504,7 +429,6 @@ function IntelTab({ ticker, onRun, data, loading, error }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4000,
-          useSearch: true,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           system: INTEL_SYSTEM,
           messages: [{
@@ -586,22 +510,11 @@ Synthesize everything into the JSON format specified. Identify the single most n
   const et = rawData.earningsTranscript || {};
   const alt = rawData.alternativeData || {};
   const edge = rawData.edgeAssessment || {};
-  const srcLinks = rawData.sourceLinks || {};
 
   const smartMoneyColor = inst.smartMoneyTrend === "Accumulating" ? "#34D399" : inst.smartMoneyTrend === "Distributing" ? "#F87171" : "#FBBF24";
 
   return (
     <div className="fade-up">
-      {/* Quick source links */}
-      {(srcLinks.secEdgar || srcLinks.earningsTranscript || srcLinks.insiderTransactions || srcLinks.institutionalFilings) && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "14px" }}>
-          {[["SEC Filings", srcLinks.secEdgar], ["Earnings Transcript", srcLinks.earningsTranscript], ["Insider Trades (Form 4)", srcLinks.insiderTransactions], ["13F Filings", srcLinks.institutionalFilings]].map(([label, url]) => url ? (
-            <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.25)", color: "#60A5FA", padding: "6px 14px", borderRadius: "6px", fontFamily: "var(--mono)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em", textDecoration: "none", cursor: "pointer" }}>
-              ↗ {label}
-            </a>
-          ) : null)}
-        </div>
-      )}
       {/* Edge insight — lead with the alpha */}
       <div style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(96,165,250,0.08))", border: "1px solid rgba(52,211,153,0.25)", borderRadius: "14px", padding: "24px 26px", marginBottom: "16px" }}>
         <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#34D399", fontFamily: "var(--mono)", marginBottom: "10px" }}>⚡ Top Non-Consensus Insight</div>
@@ -682,11 +595,10 @@ Synthesize everything into the JSON format specified. Identify the single most n
         <SecHead>Recent SEC Filings</SecHead>
         {(sec.recentFilings||[]).map((f,i) => (
           <div key={i} style={{ display: "flex", gap: "16px", marginBottom: "12px", paddingBottom: "12px", borderBottom: i < (sec.recentFilings.length-1) ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-            <div style={{ minWidth: "48px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "5px", padding: "4px 6px", textAlign: "center", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 700, color: "rgba(255,255,255,0.55)", height: "fit-content" }}>{f.url ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", textDecoration: "none" }}>{f.type}</a> : f.type}</div>
+            <div style={{ minWidth: "48px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "5px", padding: "4px 6px", textAlign: "center", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 700, color: "rgba(255,255,255,0.55)", height: "fit-content" }}>{f.type}</div>
             <div>
               <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "var(--mono)", marginBottom: "4px" }}>{f.date}</div>
               <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "14px", lineHeight: 1.6 }}>{f.keyTakeaway}</div>
-              {f.url && <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", fontSize: "11px", fontFamily: "var(--mono)", textDecoration: "none", marginTop: "4px", display: "inline-block" }}>↗ View Filing</a>}
             </div>
           </div>
         ))}
@@ -736,32 +648,24 @@ function AlphaTerminal() {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   async function callClaude(system, userMsg, maxTokens = 3000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, system, messages: [{ role: "user", content: userMsg }] }),
-      });
-      clearTimeout(timeoutId);
-      const raw = await res.json();
-      const text = raw.content?.filter(b => b.type === "text").map(b => b.text).join("") || "";
-      const cleaned = text.replace(/```json|```/g, "").trim();
-      const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
-      if (s === -1) throw new Error("No JSON in response");
-      return JSON.parse(cleaned.slice(s, e + 1));
-    } catch (e) {
-      clearTimeout(timeoutId);
-      if (e.name === "AbortError") throw new Error("Request timed out after 60 seconds");
-      throw e;
-    }
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, system, messages: [{ role: "user", content: userMsg }] }),
+    });
+    const raw = await res.json();
+    const text = raw.content?.filter(b => b.type === "text").map(b => b.text).join("") || "";
+    const cleaned = text.replace(/```json|```/g, "").trim();
+    const s = cleaned.indexOf("{"), e = cleaned.lastIndexOf("}");
+    if (s === -1) throw new Error("No JSON in response");
+    return JSON.parse(cleaned.slice(s, e + 1));
   }
 
   async function analyze(t) {
     const raw = (t || ticker).trim();
     if (!raw) return;
+    // If it looks like a ticker (1-5 caps/letters, no spaces), uppercase it
+    // If it's a company name, keep original casing but pass as-is
     const isTicker = /^[A-Za-z]{1,5}$/.test(raw);
     const q = isTicker ? raw.toUpperCase() : raw;
     setTicker(q);
@@ -770,17 +674,17 @@ function AlphaTerminal() {
     setWriteupData(null);
     setScorecardError(null);
     setWriteupError(null);
-    setScorecardLoading(true);
-    setWriteupLoading(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
     // Scorecard
-    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 3000)
+    setScorecardLoading(true);
+    callClaude(SCORECARD_PROMPT, `Analyze this company (ticker or name): ${q}. If given a company name, identify the correct ticker automatically.`, 2000)
       .then(d => { setScorecardData(d); setHistory(prev => [{ ticker: d.ticker || q, verdict: d.verdict }, ...prev.filter(h => h.ticker !== (d.ticker || q))].slice(0, 8)); })
       .catch(() => setScorecardError("Scorecard analysis failed."))
       .finally(() => setScorecardLoading(false));
 
     // Write-up
+    setWriteupLoading(true);
     callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${q}. If given a company name, identify the correct ticker. Be specific with real figures.`, 4000)
       .then(d => setWriteupData(d))
       .catch(() => setWriteupError("Write-up generation failed."))
@@ -851,7 +755,7 @@ function AlphaTerminal() {
 
         {activeTab === "writeup" && (
           writeupLoading ? <Spinner label="GENERATING IC MEMORANDUM" /> :
-          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => analyze(analyzedTicker)} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY</button></div> :
+          writeupError ? <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "10px", padding: "14px 18px", color: "#F87171", fontFamily: "var(--mono)", fontSize: "13px" }}>{writeupError}<br/><button onClick={() => { setWriteupError(null); setWriteupLoading(true); callClaude(WRITEUP_PROMPT, `Write a full IC investment memorandum for: ${analyzedTicker}. Be specific with real figures.`, 4000).then(d => setWriteupData(d)).catch(() => setWriteupError("Write-up generation failed.")).finally(() => setWriteupLoading(false)); }} style={{marginTop:"12px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",color:"#F87171",padding:"8px 16px",borderRadius:"6px",cursor:"pointer",fontFamily:"var(--mono)",fontSize:"11px"}}>RETRY</button></div> :
           writeupData ? <WriteupTab data={writeupData} /> : null
         )}
 
@@ -908,13 +812,13 @@ const VERTICALS = [
     questions:["Which layer of the stack captures the most durable value as compute commoditizes upward toward applications?","When inference costs approach zero, which business models break and which get supercharged?","Is NVIDIA's dominance structural or does custom silicon (Google TPU, Amazon Trainium, Apple) erode it meaningfully?","Which vertical AI applications have defensible data moats vs. which are replaceable GPT wrappers?","What does the next wave of AI capability unlock — and which industries get disrupted first?"],
     watchlist:["NVDA","MSFT","GOOGL","META","AMZN","TSM","AVGO","PLTR","ORCL","CRWD"],
     sources:[
-      {name:"Sequoia AI Report",author:"Sequoia Capital",cost:"Free",free:true,url:"https://sequoiacap.com/article/2026-this-is-agi/",type:"Annual Report",tag:"MUST READ",desc:"Sequoia's latest state-of-AI thesis (Jan 2026): long-horizon agents are functionally AGI, coding agents crossed a capability threshold, and the $0-to-$1B AI company club is emerging. Essential framework for AI stack investing."},
+      {name:"Sequoia AI Report",author:"Sequoia Capital",cost:"Free",free:true,url:"https://www.sequoiacap.com/article/ai-ascent-2024",type:"Annual Report",tag:"MUST READ",desc:"Annual state-of-AI from the most active AI investor. Market sizing, value chain analysis, and which bets are compounding vs. which are commoditizing."},
       {name:"The Batch",author:"Andrew Ng / DeepLearning.AI",cost:"Free",free:true,url:"https://www.deeplearning.ai/the-batch",type:"Newsletter",tag:"",desc:"Weekly technical + business AI developments. Best source for separating production-ready capabilities from research hype."},
-      {name:"a16z Big Ideas 2026",author:"Andreessen Horowitz",cost:"Free",free:true,url:"https://a16z.com/newsletter/big-ideas-2026-part-1/",type:"Annual Report",tag:"",desc:"a16z's 2026 outlook across AI infrastructure, apps, enterprise software, and defense. Covers agentic workflows, AI-native enterprise disruption, multimodal content creation, and the collapse of the system-of-record. Three-part series with crypto and American Dynamism."},
-      {name:"Hyperscaler Earnings (NVDA/MSFT/GOOGL/META/AMZN)",author:"Primary Source",cost:"Free",free:true,url:"https://www.sec.gov/cgi-bin/browse-edgar",type:"SEC Filings",tag:"HIGHEST SIGNAL",desc:"Hyperscaler capex commentary is the single best leading indicator of AI infrastructure demand. Track quarterly capex figures, forward guidance, and management Q&A for demand signals the sell-side lags on."},
+      {name:"a16z AI Canon",author:"Andreessen Horowitz",cost:"Free",free:true,url:"https://a16z.com/ai-canon",type:"Reading List",tag:"",desc:"Curated foundational readings for AI from first principles. Build the knowledge base here before forming investment views."},
+      {name:"Hyperscaler Earnings (NVDA/MSFT/GOOGL/META/AMZN)",author:"Primary Source",cost:"Free",free:true,url:"https://www.sec.gov/cgi-bin/browse-edgar",type:"SEC Filings",tag:"HIGHEST SIGNAL",desc:"Hyperscaler capex commentary is the single best leading indicator of AI infrastructure demand. The Q&A is where you learn what management is actually worried about."},
       {name:"Stratechery",author:"Ben Thompson",cost:"$200/yr",free:false,paid:true,url:"https://stratechery.com",type:"Newsletter",tag:"MUST READ",rating:5,alphaType:"Framework",desc:"Best framework for AI stack dynamics, platform economics, and why some AI moats are durable while others are illusory. Changes how you see every tech investment permanently.",roiCase:"One correct call on stack layer value capture pays for a decade of subscriptions."},
       {name:"SemiAnalysis",author:"Dylan Patel",cost:"$500/yr",free:false,paid:true,url:"https://www.semianalysis.com",type:"Deep Research",tag:"HIGHEST SIGNAL",rating:5,alphaType:"Technical Research",desc:"Definitive source on semiconductor economics, GPU architecture, data center power/cooling, and custom silicon competitive mapping. Non-negotiable if AI infra is a core vertical.",roiCase:"Understanding NVIDIA's moat vs. custom silicon 12 months before consensus priced it."},
-      {name:"The Information",author:"Jessica Lessin",cost:"$600/yr",free:false,paid:true,url:"https://www.theinformation.com",type:"Premium News",tag:"",rating:4,alphaType:"Sourced Reporting",desc:"Best sourced reporting on tech company internals — MSFT/OpenAI dynamics, Google AI tensions, product delays. Breaks stories that move public stocks months before mainstream press.",roiCase:"Breaking stories on MSFT-OpenAI tensions, Google AI restructuring, and Apple intelligence delays months before mainstream press. For any tech-heavy book, early private company intelligence is the core value."},
+      {name:"The Information",author:"Jessica Lessin",cost:"$600/yr",free:false,paid:true,url:"https://www.theinformation.com",type:"Premium News",tag:"",rating:4,alphaType:"Sourced Reporting",desc:"Best sourced reporting on tech company internals — MSFT/OpenAI dynamics, Google AI tensions, product delays. Breaks stories that move public stocks months before mainstream press.",roiCase:"MSFT-OpenAI relationship reporting was months ahead of public awareness in 2024."},
       {name:"Quiver Quantitative",author:"Quiver Quant",cost:"$600/yr",free:false,paid:true,url:"https://www.quiverquant.com",type:"Alt Data Platform",tag:"",rating:5,alphaType:"Alt Data Aggregator",desc:"Congressional trades, 13F changes, insider Form 4s, job postings — all in one dashboard. Applies across all verticals. Especially useful for tracking institutional accumulation in AI names.",roiCase:"Seeing insider buy clusters before catalysts is actionable signal unavailable for free anywhere."},
     ],
   },
@@ -930,7 +834,7 @@ const VERTICALS = [
       {name:"Nuclear Energy Institute",author:"NEI",cost:"Free",free:true,url:"https://www.nei.org/resources/reports-briefs",type:"Industry Reports",tag:"",desc:"Primary source on nuclear capacity, SMR development timelines, and hyperscaler nuclear PPA deals. Track Microsoft/Constellation, Amazon/Talen deal flow here first."},
       {name:"EIA Weekly Data",author:"US Energy Info. Admin.",cost:"Free",free:true,url:"https://www.eia.gov/electricity/data.php",type:"Primary Data",tag:"",desc:"Primary source for US electricity generation, capacity, and demand data. Track load growth quarter over quarter to verify or challenge the demand thesis with real numbers."},
       {name:"Vertiv & GE Vernova Earnings",author:"Primary Source",cost:"Free",free:true,url:"https://seekingalpha.com/earnings/earnings-call-transcripts",type:"Transcripts",tag:"",desc:"VRT (cooling/power equipment) and GEV (grid/turbines) earnings calls are the best real-time demand signal for power infrastructure buildout. Watch backlog growth and lead times."},
-      {name:"Doomberg",author:"Doomberg (anonymous)",cost:"$200/yr",free:false,paid:true,url:"https://doomberg.substack.com",type:"Newsletter",tag:"MUST READ",rating:5,alphaType:"Industry Insider",desc:"Written by energy industry veterans. Best non-consensus takes on power economics, nuclear viability, LNG dynamics, and physical constraints of AI scaling. Most financial analysts have never worked in energy — these people have.",roiCase:"Nuclear thesis and LNG export calls were consistently 12+ months ahead of equity market consensus. Non-consensus industrial theses with documented track record."},
+      {name:"Doomberg",author:"Doomberg (anonymous)",cost:"$200/yr",free:false,paid:true,url:"https://doomberg.substack.com",type:"Newsletter",tag:"MUST READ",rating:5,alphaType:"Industry Insider",desc:"Written by energy industry veterans. Best non-consensus takes on power economics, nuclear viability, LNG dynamics, and physical constraints of AI scaling. Most financial analysts have never worked in energy — these people have.",roiCase:"Their nuclear thesis (2022-23) and LNG export thesis were 12+ months ahead of consensus."},
       {name:"Wood Mackenzie (full access)",author:"Wood Mackenzie",cost:"$15–40K/yr",free:false,paid:true,url:"https://www.woodmac.com",type:"Industry Data",tag:"",rating:3,alphaType:"Energy Data Platform",desc:"Comprehensive energy market data — power demand forecasts, renewable capacity projections, oil & gas reserve analysis. What utility CFOs and energy PE funds use for capital allocation. Free summaries cover most equity investor needs.",roiCase:"Only justifiable if energy is 20%+ of book. Proprietary demand forecasts that differ from consensus have direct P&L impact at that concentration."},
     ],
   },
@@ -1037,11 +941,11 @@ const VERTICALS = [
     questions:["Where are we in the global rate cycle — and which asset classes are most mis-priced at current rates?","Is the dollar structurally weakening (de-dollarization, twin deficits) or is dollar strength a multi-year theme?","What is the real supply/demand picture for oil — does OPEC+ discipline hold, and how does US shale respond to $70 oil?","Is gold's rally driven by central bank buying (structural) or inflation expectations (cyclical)?","Which emerging markets benefit most from a weaker dollar and commodity supercycle — and which are debt traps?"],
     watchlist:["GLD","SLV","USO","XOM","CVX","COP","FCX","BHP","TLT","DXY"],
     sources:[
-      {name:"Druckenmiller / Ackman / Tepper Interviews",author:"Various",cost:"Free",free:true,url:"https://www.youtube.com/results?search_query=druckenmiller+interview+2026",type:"Primary Source",tag:"MUST READ",desc:"Read and watch everything these investors publish publicly. More signal per page than any paid service. Druckenmiller's macro framework and Ackman's capital structure thinking are irreplaceable."},
+      {name:"Druckenmiller / Ackman / Tepper Interviews",author:"Various",cost:"Free",free:true,url:"https://www.youtube.com/results?search_query=druckenmiller+interview+2025",type:"Primary Source",tag:"MUST READ",desc:"Read and watch everything these investors publish publicly. More signal per page than any paid service. Druckenmiller's macro framework and Ackman's capital structure thinking are irreplaceable."},
       {name:"Employ America",author:"Employ America",cost:"Free",free:true,url:"https://employamerica.org/researchreports",type:"Policy Research",tag:"HIGHEST SIGNAL",desc:"Labor market analysis consistently ahead of both Fed commentary and consensus. Their monetary policy transmission analysis has been among the most accurate macro research publicly available."},
       {name:"OPEC Monthly Oil Market Report",author:"OPEC",cost:"Free",free:true,url:"https://www.opec.org/opec_web/en/publications/338.htm",type:"Primary Data",tag:"",desc:"Primary source for global oil supply/demand balance, OPEC+ production data, and demand revisions. Read every month if you have any energy exposure. The footnotes contain more signal than most analyst notes."},
       {name:"Federal Reserve FRED Database",author:"St. Louis Fed",cost:"Free",free:true,url:"https://fred.stlouisfed.org",type:"Primary Data",tag:"",desc:"Most comprehensive free economic database in the world — 800,000+ series on rates, inflation, employment, credit, and global macro data. Build your own macro dashboard before paying for Bloomberg."},
-      {name:"BIS Quarterly Review",author:"Bank for International Settlements",cost:"Free",free:true,url:"https://www.bis.org/publ/qtrpdf/r_qt2512.htm",type:"Central Bank Research",tag:"",desc:"Most rigorous central bank research on global financial conditions, credit cycles, and cross-border capital flows. December 2025 edition covers FX derivatives turnover, monetary policy frameworks, and global leverage dynamics."},
+      {name:"BIS Quarterly Review",author:"Bank for International Settlements",cost:"Free",free:true,url:"https://www.bis.org/publ/qtrpdf/r_qt2312.htm",type:"Central Bank Research",tag:"",desc:"Most rigorous central bank research on global financial conditions, credit cycles, and cross-border capital flows. The macro plumbing — what's happening in dollar funding markets and global leverage."},
       {name:"Doomberg",author:"Doomberg (anonymous)",cost:"$200/yr",free:false,paid:true,url:"https://doomberg.substack.com",type:"Newsletter",tag:"MUST READ",rating:5,alphaType:"Commodity Expertise",desc:"Energy, commodities, and industrial policy with genuine non-consensus takes from industry veterans. If your macro book touches energy or physical commodities, this is the sharpest independent voice available.",roiCase:"LNG export thesis and nuclear power calls were both 12+ months ahead of equity market consensus."},
       {name:"Real Vision",author:"Raoul Pal et al.",cost:"Free/paid",free:true,url:"https://www.realvision.com",type:"Video / Interviews",tag:"",desc:"Long-form macro interviews with hedge fund managers, economists, and strategists. Free tier has substantial content. Best for building a macro worldview by hearing how the best investors actually think."},
       {name:"Quiver Quantitative",author:"Quiver Quant",cost:"$600/yr",free:false,paid:true,url:"https://www.quiverquant.com",type:"Alt Data Platform",tag:"",rating:5,alphaType:"Alt Data Aggregator",desc:"Congressional trading and lobbying data is especially useful for macro — energy policy, trade policy, and regulatory shifts often show up in lobbying spend and congressional trades months before the market prices them.",roiCase:"Congressional trading patterns ahead of energy and trade policy announcements have documented alpha."},
@@ -1105,7 +1009,7 @@ const PREMIUM_TIERS = [
         alphaType: "Non-Consensus Industry Expertise",
         whatYouGet: "Energy, commodities, and industrial policy from people who've actually run businesses in these sectors. Consistently ahead of consensus on LNG, nuclear, and power demand. Most financial analysts have never worked in an energy business — these people have.",
         whatYouDontGet: "Specific stock picks. The analysis is industry-level, not company-level.",
-        roiCase: "Nuclear thesis and LNG export calls were consistently 12+ months ahead of consensus. One well-timed energy position covers years of subscription cost.",
+        roiCase: "Their nuclear thesis in 2022-23 and LNG export thesis were both 12+ months ahead of consensus. One well-timed energy position covers years of subscription cost.",
         alternatives: "Heatmap News and EIA data are free but don't have the industry insider perspective.",
         rating: 5,
       },
@@ -1153,7 +1057,7 @@ const PREMIUM_TIERS = [
         alphaType: "Sourced Reporting / Private Co Intel",
         whatYouGet: "Best sourced reporting on tech company internals — product decisions, leadership dynamics, and revenue data on private AI companies before they're public. Breaks stories that move public stocks: MSFT-OpenAI dynamics, Google AI internal tensions, Apple product delays.",
         whatYouDontGet: "Investment analysis. This is journalism, not research. You have to form your own investment conclusion.",
-        roiCase: "Breaking stories on MSFT-OpenAI relationship strain, Anthropic's meteoric rise, and Google AI internal dynamics months ahead of public awareness. For any tech-heavy book, the early private company intelligence is the core value.",
+        roiCase: "The Information's reporting on Microsoft-OpenAI relationship strain in 2024 was months ahead of public awareness. For any tech-heavy book, the early private company intelligence is the core value.",
         alternatives: "Bloomberg free tier covers some of this. Nothing matches the tech company insider sourcing.",
         rating: 4,
       },
@@ -1311,7 +1215,7 @@ const PREMIUM_TIERS = [
 
 /* ── CASCADE DATA ─────────────────────────────────────────────── */
 const CASCADE = [
-  { order:"1ST ORDER", color:"#34D399", label:"AI Core", items:["NVIDIA Blackwell deployed at scale, next-gen Rubin in development","Hyperscaler capex exceeded $250B in 2025 — 2026E estimates rising","Foundation model competition: GPT-5.2, Claude Opus 4.6, Gemini 3 all shipping","Long-horizon AI agents crossing capability thresholds (Claude Code, OpenClaw)","Inference cost deflation accelerating — approaching commodity pricing"] },
+  { order:"1ST ORDER", color:"#34D399", label:"AI Core", items:["NVIDIA GPU demand surge (H100 → Blackwell)","Hyperscaler capex ($250B+ in 2025E)","Foundation model competitive dynamics intensify","Enterprise AI software adoption acceleration","Inference cost deflation approaching zero"] },
   { order:"2ND ORDER", color:"#FBBF24", label:"Power & Energy", items:["Data center power demand (+15-20% of US grid by 2030E)","Natural gas peaker plant construction boom","Nuclear power renaissance (SMR pipelines, plant restarts)","Grid transmission bottleneck becomes binding constraint","Power equipment supercycle — 2-3yr transformer lead times","Cooling technology race (liquid immersion, direct chip)"] },
   { order:"3RD ORDER", color:"#F472B6", label:"Physical Infrastructure", items:["Copper demand surge (transmission wiring + construction)","Steel, concrete for data center construction","Water scarcity in arid data center regions (AZ, TX, NV)","Industrial land repricing near power nodes","Permitting reform urgency (FERC 1920, state-level)","Skilled electrician and construction labor shortage"] },
   { order:"4TH ORDER", color:"#C084FC", label:"Macro & Geopolitical", items:["US-China critical mineral competition (rare earths, lithium)","Energy cost divergence — US advantage vs. Europe","Sovereign AI arms race → defense spending cycle","Capital flows toward physical asset-heavy economies","Dollar reserve status stress from AI-driven trade shifts","Inflation from energy + construction cost embedded in CPI"] },
@@ -1475,7 +1379,7 @@ function CascadeView() {
       <div style={{ marginTop:"24px", background:"rgba(52,211,153,0.04)", border:"1px solid rgba(52,211,153,0.14)", borderRadius:"10px", padding:"18px 22px" }}>
         <div style={{ fontSize:"11px", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:"#34D399", fontFamily:"var(--mono)", marginBottom:"8px" }}>How to Use This</div>
         <p style={{ color:"rgba(255,255,255,0.6)", fontSize:"14px", lineHeight:1.8 }}>
-          The copper trade, nuclear power renaissance, industrial real estate near power nodes — each was a trickle-down effect actionable well before it became consensus. Map your current positions against this cascade. <span style={{ color:"rgba(255,255,255,0.85)", fontWeight:600 }}>Where on the chain is the market currently focused?</span> That tells you where to look next — one order below where consensus is currently crowded.
+          The copper trade in 2022, nuclear power in 2023, industrial real estate near power nodes in 2024 — each was a trickle-down effect actionable well before it became consensus. Map your current positions against this cascade. <span style={{ color:"rgba(255,255,255,0.85)", fontWeight:600 }}>Where on the chain is the market currently focused?</span> That tells you where to look next — one order below where consensus is currently crowded.
         </p>
       </div>
     </div>
